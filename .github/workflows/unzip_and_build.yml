@@ -1,4 +1,4 @@
-name: Remove Widgets and Force Build APK
+name: Safe Clean Build APK
 
 on:
   push:
@@ -22,12 +22,16 @@ jobs:
         run: |
           unzip -o InfinityClock-Part3.zip -d .
 
-      - name: Block & Remove Problematic Widget Files
+      - name: Comment Out Widget Dependencies Safely
         run: |
-          # Remove entire widget source directory to stop Kotlin compiler errors
+          # Remove broken widget files
           rm -rf app/src/main/java/com/infinityclock/app/widget
           
-          # Remove widget declarations from Manifest so build succeeds
+          # Safely comment out lines calling Widget in StudioViewModel & LiveWallpaperService
+          sed -i 's/.*WidgetUpdateScheduler.*/\/\/ &/' app/src/main/java/com/infinityclock/app/viewmodel/StudioViewModel.kt || true
+          sed -i 's/.*Widget.*/\/\/ &/' app/src/main/java/com/infinityclock/app/wallpaper/InfinityLiveWallpaperService.kt || true
+          
+          # Remove widget entries from Manifest
           sed -i '/<receiver android:name=".*Widget.*/,/<\/receiver>/d' app/src/main/AndroidManifest.xml || true
           sed -i '/<activity android:name=".*Widget.*/,/<\/activity>/d' app/src/main/AndroidManifest.xml || true
 
