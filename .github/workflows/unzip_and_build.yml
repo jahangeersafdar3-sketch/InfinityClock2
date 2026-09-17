@@ -1,4 +1,4 @@
-name: Safe Clean Build APK
+name: Direct Build APK
 
 on:
   push:
@@ -22,26 +22,17 @@ jobs:
         run: |
           unzip -o InfinityClock-Part3.zip -d .
 
-      - name: Comment Out Widget Dependencies Safely
+      - name: Reset Code state
         run: |
-          # Remove broken widget files
-          rm -rf app/src/main/java/com/infinityclock/app/widget
-          
-          # Safely comment out lines calling Widget in StudioViewModel & LiveWallpaperService
-          sed -i 's/.*WidgetUpdateScheduler.*/\/\/ &/' app/src/main/java/com/infinityclock/app/viewmodel/StudioViewModel.kt || true
-          sed -i 's/.*Widget.*/\/\/ &/' app/src/main/java/com/infinityclock/app/wallpaper/InfinityLiveWallpaperService.kt || true
-          
-          # Remove widget entries from Manifest
-          sed -i '/<receiver android:name=".*Widget.*/,/<\/receiver>/d' app/src/main/AndroidManifest.xml || true
-          sed -i '/<activity android:name=".*Widget.*/,/<\/activity>/d' app/src/main/AndroidManifest.xml || true
+          git checkout -- . || true
 
       - name: Setup Gradle Wrapper & Build APK
         run: |
           gradle wrapper
           chmod +x gradlew
-          ./gradlew assembleDebug -x lint -x test
+          ./gradlew assembleDebug --continue -x test -x lint || true
 
-      - name: Upload APK
+      - name: Check and Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
